@@ -85,6 +85,21 @@ class SocialMediaAnalysisApp:
         # Save button
         self.save_project_button = ttk.Button(tab, text="Save Project", command=self.save_project)
         self.save_project_button.grid(row=7, column=0, columnspan=2, pady=20)
+        # Create a frame for utility buttons
+        utility_frame = ttk.Frame(tab)
+        utility_frame.grid(row=8, column=0, columnspan=2, pady=10)
+
+        # Add Sample Data button
+        sample_data_button = ttk.Button(utility_frame, text="Add Sample Dataset",
+                                        command=self.populate_sample_data)
+        sample_data_button.grid(row=1, column=0, columnspan=3, padx=5, pady=5)
+
+        # You can also add your reset buttons here if you want them all together
+        reset_projects_btn = ttk.Button(utility_frame, text="Reset Project Data", command=self.reset_project_data)
+        reset_projects_btn.grid(row=0, column=1, padx=5, pady=5)
+
+        reset_all_btn = ttk.Button(utility_frame, text="Reset All Data", command=self.reset_all_data)
+        reset_all_btn.grid(row=0, column=2, padx=5, pady=5)
     def create_fields_tab(self):
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text="Project Fields")
@@ -440,6 +455,326 @@ class SocialMediaAnalysisApp:
         # Configure to make results area expandable
         tab.grid_rowconfigure(3, weight=1)
     # FUNCTIONS
+    def populate_sample_data(self):
+        """Populate the database with a complete sample dataset"""
+        try:
+            cursor = self.connection.cursor()
+
+            # First, add social media platforms
+            social_media_data = [
+                (1, "Twitter"),
+                (2, "Instagram"),
+                (3, "Facebook")
+            ]
+
+            for sm_id, sm_name in social_media_data:
+                cursor.execute("SELECT ID FROM SocialMedia WHERE Name = %s", (sm_name,))
+                if not cursor.fetchone():
+                    cursor.execute("INSERT INTO SocialMedia (Name) VALUES (%s)", (sm_name,))
+                    self.connection.commit()
+
+            # Add institutions
+            institutions = ["SMU", "University of Texas", "Texas A&M", "Rice University"]
+            for institution in institutions:
+                cursor.execute("SELECT Name FROM Institution WHERE Name = %s", (institution,))
+                if not cursor.fetchone():
+                    cursor.execute("INSERT INTO Institution (Name) VALUES (%s)", (institution,))
+                    self.connection.commit()
+
+            # Add users FIRST (important for foreign key constraints)
+            user_data = [
+                (1, "JohnDoe", "John", "Doe", "USA", "USA", 28, "Male", True),
+                (2, "JaneSmith", "Jane", "Smith", "Canada", "USA", 32, "Female", True),
+                (1, "TechGuru", "Alex", "Chen", "China", "USA", 35, "Male", True),
+                (3, "FitnessFan", "Maria", "Garcia", "Mexico", "USA", 29, "Female", False),
+                (2, "Traveler123", "Sam", "Wilson", "UK", "UK", 31, "Male", True),
+                (3, "FoodLover", "Lisa", "Brown", "USA", "USA", 27, "Female", False),
+                (1, "GamerPro", "Ryan", "Miller", "USA", "Canada", 24, "Male", True),
+                (2, "ArtCreator", "Emma", "Davis", "France", "France", 33, "Female", True),
+                (3, "SportsEnthusiast", "Michael", "Johnson", "USA", "USA", 30, "Male", False),
+                (1, "MusicFan", "Olivia", "Taylor", "Australia", "USA", 26, "Female", True)
+            ]
+
+            # Make sure EACH user is committed to the database immediately
+            for sm_id, username, first_name, last_name, birth_country, residence_country, age, gender, is_verified in user_data:
+                # First check if the social media platform exists
+                cursor.execute("SELECT ID FROM SocialMedia WHERE ID = %s", (sm_id,))
+                if not cursor.fetchone():
+                    messagebox.showerror("Error", f"Social Media with ID {sm_id} does not exist")
+                    return
+
+                # Then check if user already exists
+                cursor.execute("SELECT ID FROM User WHERE SM_ID = %s AND Username = %s", (sm_id, username))
+                if not cursor.fetchone():
+                    cursor.execute("""
+                        INSERT INTO User (SM_ID, Username, First_Name, Last_Name, Country_of_Birth, 
+                        Country_of_Residence, Age, Gender, Is_Verified) 
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (sm_id, username, first_name, last_name, birth_country,
+                          residence_country, age, gender, is_verified))
+                    self.connection.commit()  # Commit each user separately to ensure it's saved
+
+            # Add projects/experiments
+            project_data = [
+                ("Political Sentiment Analysis", "Robert", "Johnson", "SMU", "2023-01-01", "2023-12-31"),
+                ("Brand Engagement Study", "Sarah", "Williams", "University of Texas", "2023-02-15", "2023-11-30"),
+                ("COVID-19 Information Spread", "David", "Brown", "Texas A&M", "2023-03-10", "2023-10-15"),
+                (
+                "Environmental Awareness Campaign", "Jennifer", "Miller", "Rice University", "2023-04-20", "2023-09-30")
+            ]
+
+            project_ids = {}
+            for name, pm_first, pm_last, institution, start_date, end_date in project_data:
+                cursor.execute("SELECT ID FROM Project WHERE Name = %s", (name,))
+                result = cursor.fetchone()
+                if not result:
+                    cursor.execute("""
+                        INSERT INTO Project (Name, PM_First_Name, PM_Last_Name, Institution_Name, Start_Date, End_Date)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (name, pm_first, pm_last, institution, start_date, end_date))
+                    self.connection.commit()
+                    cursor.execute("SELECT LAST_INSERT_ID()")
+                    project_ids[name] = cursor.fetchone()[0]
+                else:
+                    project_ids[name] = result[0]
+
+            # Add project fields
+            field_data = [
+                ("Political Sentiment Analysis", [
+                    "PostAssociation", "Sentiment", "Political_Leaning", "Topic", "Region"
+                ]),
+                ("Brand Engagement Study", [
+                    "PostAssociation", "Sentiment", "Brand_Mentioned", "Engagement_Level", "Demographics"
+                ]),
+                ("COVID-19 Information Spread", [
+                    "PostAssociation", "Information_Type", "Accuracy", "Source_Cited", "Reach"
+                ]),
+                ("Environmental Awareness Campaign", [
+                    "PostAssociation", "Environmental_Issue", "Call_To_Action", "Target_Audience", "Geographic_Focus"
+                ])
+            ]
+
+            field_ids = {}
+            for project_name, fields in field_data:
+                project_id = project_ids[project_name]
+                for field_name in fields:
+                    cursor.execute("""
+                        SELECT ID FROM ProjectFields
+                        WHERE Project_ID = %s AND Field_Name = %s
+                    """, (project_id, field_name))
+                    result = cursor.fetchone()
+                    if not result:
+                        cursor.execute("""
+                            INSERT INTO ProjectFields (Project_ID, Field_Name)
+                            VALUES (%s, %s)
+                        """, (project_id, field_name))
+                        self.connection.commit()
+                        cursor.execute("SELECT LAST_INSERT_ID()")
+                        if project_name not in field_ids:
+                            field_ids[project_name] = {}
+                        field_ids[project_name][field_name] = cursor.fetchone()[0]
+                    else:
+                        if project_name not in field_ids:
+                            field_ids[project_name] = {}
+                        field_ids[project_name][field_name] = result[0]
+
+            # Add posts - making sure to verify user existence first
+            post_data = [
+                (1, "JohnDoe", "Just voted! The lines were long but it's our civic duty. #Election2023",
+                 "2023-05-12 10:30:00", "Dallas", "TX", "USA", 120, 5, False),
+                (2, "JaneSmith", "Trying out the new iPhone - amazing camera quality! #tech #Apple",
+                 "2023-06-03 15:45:00", "Austin", "TX", "USA", 250, 3, True),
+                (1, "TechGuru", "AI is advancing faster than regulations can keep up. We need thoughtful policies now.",
+                 "2023-05-20 09:15:00", "San Francisco", "CA", "USA", 430, 12, False),
+                (3, "FitnessFan", "My 30-day fitness challenge is complete! Before and after pics attached. #fitness",
+                 "2023-06-10 18:00:00", "Miami", "FL", "USA", 380, 2, True),
+                (2, "Traveler123", "Amazing sunset at the Grand Canyon! Nature at its best. #travel",
+                 "2023-07-05 20:10:00", "Grand Canyon", "AZ", "USA", 520, 1, True),
+                (3, "FoodLover", "Made homemade pasta for the first time. Recipe in comments! #foodie",
+                 "2023-06-22 19:30:00", "Chicago", "IL", "USA", 190, 0, True),
+                (1, "GamerPro", "New game release day! Can't wait to start playing. #gaming",
+                 "2023-07-15 12:00:00", "Seattle", "WA", "USA", 150, 4, False),
+                (2, "ArtCreator", "My latest painting inspired by climate change. Thoughts? #art",
+                 "2023-06-28 14:20:00", "New York", "NY", "USA", 310, 2, True),
+                (3, "SportsEnthusiast", "What a game! Can't believe that last-minute goal. #soccer",
+                 "2023-07-10 22:45:00", "Boston", "MA", "USA", 280, 8, False),
+                (1, "MusicFan", "This new album is fire! Been on repeat all day. #music",
+                 "2023-06-15 16:35:00", "Nashville", "TN", "USA", 210, 3, False),
+                (2, "JohnDoe", "Climate change is real. Here's what we can all do to help. #environment",
+                 "2023-07-12 11:25:00", "Portland", "OR", "USA", 420, 15, True),
+                (3, "JaneSmith", "Volunteering at the animal shelter today. These pets need homes! #adoption",
+                 "2023-07-18 13:40:00", "San Diego", "CA", "USA", 350, 0, True),
+                (1, "TechGuru", "5G rollout is happening faster than expected. Great for IoT applications.",
+                 "2023-06-25 10:05:00", "Denver", "CO", "USA", 290, 6, False),
+                (2, "FitnessFan", "Nutrition is 80% of your fitness journey. Focus on whole foods. #health",
+                 "2023-07-20 07:30:00", "Phoenix", "AZ", "USA", 270, 2, False),
+                (3, "Traveler123", "Local markets are the best way to experience a culture. #travel #food",
+                 "2023-06-19 12:15:00", "Philadelphia", "PA", "USA", 330, 1, True)
+            ]
+
+            post_ids = {}
+            for sm_id, username, text, time_posted, city, state, country, likes, dislikes, has_multimedia in post_data:
+                # First verify the user exists
+                cursor.execute("SELECT ID FROM User WHERE SM_ID = %s AND Username = %s", (sm_id, username))
+                if not cursor.fetchone():
+                    messagebox.showinfo("Info",
+                                        f"Skipping post for user {username} on platform {sm_id} - user doesn't exist")
+                    continue
+
+                cursor.execute("""
+                    SELECT ID FROM Post 
+                    WHERE SM_ID = %s AND Username = %s AND Time_Posted = %s
+                """, (sm_id, username, time_posted))
+
+                result = cursor.fetchone()
+                if not result:
+                    cursor.execute("""
+                        INSERT INTO Post (SM_ID, Username, Text_Post, Time_Posted, City_of_Post, 
+                        State_of_Post, Country_of_Post, Likes, Dislikes, Has_Multimedia)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (sm_id, username, text, time_posted, city, state, country,
+                          likes, dislikes, has_multimedia))
+                    self.connection.commit()
+                    cursor.execute("SELECT LAST_INSERT_ID()")
+                    post_ids[(username, time_posted)] = cursor.fetchone()[0]
+                else:
+                    post_ids[(username, time_posted)] = result[0]
+
+            # Associate posts with projects and add analysis results
+            associations = [
+                # Political Sentiment Analysis project
+                ("JohnDoe", "2023-05-12 10:30:00", "Political Sentiment Analysis", {
+                    "Sentiment": "Positive",
+                    "Political_Leaning": "Neutral",
+                    "Topic": "Voting",
+                    "Region": "Southwest"
+                }),
+                ("TechGuru", "2023-05-20 09:15:00", "Political Sentiment Analysis", {
+                    "Sentiment": "Concerned",
+                    "Political_Leaning": "Moderate",
+                    "Topic": "Technology Regulation",
+                    "Region": "West"
+                }),
+                ("JohnDoe", "2023-07-12 11:25:00", "Political Sentiment Analysis", {
+                    "Sentiment": "Urgent",
+                    "Political_Leaning": "Progressive",
+                    "Topic": "Environment",
+                    "Region": "Northwest"
+                }),
+
+                # Brand Engagement Study
+                ("JaneSmith", "2023-06-03 15:45:00", "Brand Engagement Study", {
+                    "Sentiment": "Positive",
+                    "Brand_Mentioned": "Apple",
+                    "Engagement_Level": "High",
+                    "Demographics": "Tech-savvy"
+                }),
+                ("GamerPro", "2023-07-15 12:00:00", "Brand Engagement Study", {
+                    "Sentiment": "Excited",
+                    "Brand_Mentioned": "Gaming",
+                    "Engagement_Level": "Medium",
+                    "Demographics": "Young Adult"
+                }),
+                ("MusicFan", "2023-06-15 16:35:00", "Brand Engagement Study", {
+                    "Sentiment": "Positive",
+                    "Brand_Mentioned": "Music",
+                    "Engagement_Level": "High",
+                    "Demographics": "Young Adult"
+                }),
+
+                # COVID-19 Information Spread
+                ("TechGuru", "2023-06-25 10:05:00", "COVID-19 Information Spread", {
+                    "Information_Type": "Technology",
+                    "Accuracy": "Factual",
+                    "Source_Cited": "No",
+                    "Reach": "Medium"
+                }),
+                ("FitnessFan", "2023-07-20 07:30:00", "COVID-19 Information Spread", {
+                    "Information_Type": "Health",
+                    "Accuracy": "Factual",
+                    "Source_Cited": "No",
+                    "Reach": "Medium"
+                }),
+                ("JaneSmith", "2023-07-18 13:40:00", "COVID-19 Information Spread", {
+                    "Information_Type": "Community",
+                    "Accuracy": "Factual",
+                    "Source_Cited": "No",
+                    "Reach": "Low"
+                }),
+
+                # Environmental Awareness Campaign
+                ("JohnDoe", "2023-07-12 11:25:00", "Environmental Awareness Campaign", {
+                    "Environmental_Issue": "Climate Change",
+                    "Call_To_Action": "Personal Actions",
+                    "Target_Audience": "General Public",
+                    "Geographic_Focus": "Global"
+                }),
+                ("ArtCreator", "2023-06-28 14:20:00", "Environmental Awareness Campaign", {
+                    "Environmental_Issue": "Climate Change",
+                    "Call_To_Action": "Awareness",
+                    "Target_Audience": "Art Community",
+                    "Geographic_Focus": "Urban"
+                }),
+                ("Traveler123", "2023-07-05 20:10:00", "Environmental Awareness Campaign", {
+                    "Environmental_Issue": "Conservation",
+                    "Call_To_Action": "Appreciation",
+                    "Target_Audience": "Travelers",
+                    "Geographic_Focus": "National Parks"
+                })
+            ]
+
+            for username, time_posted, project_name, field_values in associations:
+                if (username, time_posted) not in post_ids:
+                    messagebox.showinfo("Info",
+                                        f"Skipping association for post by {username} at {time_posted} - post doesn't exist")
+                    continue
+
+                post_id = post_ids.get((username, time_posted))
+                project_id = project_ids.get(project_name)
+
+                if post_id and project_id:
+                    # First, associate the post with the project using PostAssociation field
+                    assoc_field_id = field_ids[project_name]["PostAssociation"]
+
+                    cursor.execute("""
+                        SELECT ID FROM AnalysisResults 
+                        WHERE Project_ID = %s AND Post_ID = %s AND Field_ID = %s
+                    """, (project_id, post_id, assoc_field_id))
+
+                    if not cursor.fetchone():
+                        cursor.execute("""
+                            INSERT INTO AnalysisResults (Project_ID, Post_ID, Field_ID, Field_Value)
+                            VALUES (%s, %s, %s, 'Associated')
+                        """, (project_id, post_id, assoc_field_id))
+                        self.connection.commit()
+
+                    # Then add the analysis results
+                    for field_name, field_value in field_values.items():
+                        if field_name in field_ids[project_name]:
+                            field_id = field_ids[project_name][field_name]
+
+                            cursor.execute("""
+                                SELECT ID FROM AnalysisResults 
+                                WHERE Project_ID = %s AND Post_ID = %s AND Field_ID = %s
+                            """, (project_id, post_id, field_id))
+
+                            if not cursor.fetchone():
+                                cursor.execute("""
+                                    INSERT INTO AnalysisResults (Project_ID, Post_ID, Field_ID, Field_Value)
+                                    VALUES (%s, %s, %s, %s)
+                                """, (project_id, post_id, field_id, field_value))
+                                self.connection.commit()
+
+            # Final commit
+            self.connection.commit()
+            messagebox.showinfo("Success", "Sample dataset has been added to the database")
+
+            # Refresh dropdowns
+            self.populate_project_dropdown()
+
+        except mysql.connector.Error as err:
+            self.connection.rollback()
+            messagebox.showerror("Database Error", f"Failed to populate data: {err}")
     def populate_project_dropdown(self):
         if self.connection:
             try:
@@ -646,23 +981,47 @@ class SocialMediaAnalysisApp:
                 cursor.execute("SELECT LAST_INSERT_ID()")
                 post_id = cursor.fetchone()[0]
 
-            # Associate post with project
+            # Associate post with project (without creating a field)
             cursor.execute("SELECT ID FROM Project WHERE Name = %s", (proj,))
             project_id = cursor.fetchone()[0]
 
-            field_name = f"Post_{post_id}"
+            # Instead of creating a field, we'll create a direct association
+            # For this, we need a new table PostProjects or modify how we use AnalysisResults
+            # Here, we'll directly insert into AnalysisResults with a special field ID
 
-            # Check if field exists
+            # Get or create a system field for tracking posts
             cursor.execute("""
                 SELECT ID FROM ProjectFields 
-                WHERE Project_ID = %s AND Field_Name = %s
-            """, (project_id, field_name))
+                WHERE Project_ID = %s AND Field_Name = 'PostAssociation'
+            """, (project_id,))
+
+            field_result = cursor.fetchone()
+            if not field_result:
+                cursor.execute("""
+                    INSERT INTO ProjectFields (Project_ID, Field_Name)
+                    VALUES (%s, 'PostAssociation')
+                """, (project_id,))
+                self.connection.commit()
+
+                cursor.execute("""
+                    SELECT ID FROM ProjectFields 
+                    WHERE Project_ID = %s AND Field_Name = 'PostAssociation'
+                """, (project_id,))
+                field_result = cursor.fetchone()
+
+            field_id = field_result[0]
+
+            # Associate post with project
+            cursor.execute("""
+                SELECT ID FROM AnalysisResults
+                WHERE Project_ID = %s AND Post_ID = %s AND Field_ID = %s
+            """, (project_id, post_id, field_id))
 
             if not cursor.fetchone():
                 cursor.execute("""
-                    INSERT INTO ProjectFields (Project_ID, Field_Name)
-                    VALUES (%s, %s)
-                """, (project_id, field_name))
+                    INSERT INTO AnalysisResults (Project_ID, Post_ID, Field_ID, Field_Value)
+                    VALUES (%s, %s, %s, 'Associated')
+                """, (project_id, post_id, field_id))
 
             self.connection.commit()
             messagebox.showinfo("Success", "Post associated with project")
@@ -693,7 +1052,7 @@ class SocialMediaAnalysisApp:
                 cursor.execute("""
                     SELECT Field_Name FROM ProjectFields
                     JOIN Project ON ProjectFields.Project_ID = Project.ID
-                    WHERE Project.Name = %s
+                    WHERE Project.Name = %s AND Field_Name != 'PostAssociation'
                 """, (proj,))
 
                 fields = [row[0] for row in cursor.fetchall()]
@@ -764,6 +1123,68 @@ class SocialMediaAnalysisApp:
         except mysql.connector.Error as err:
             self.connection.rollback()
             messagebox.showerror("Database Error", f"Error: {err}")
+    def reset_project_data(self):
+        """Reset only project-related data"""
+        if messagebox.askyesno("Warning",
+                               "This will delete ALL project data including analysis results. Are you sure?"):
+            try:
+                cursor = self.connection.cursor()
+
+                # Disable foreign key checks temporarily
+                cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+
+                # Truncate tables in reverse order of dependencies
+                cursor.execute("TRUNCATE TABLE AnalysisResults")
+                cursor.execute("TRUNCATE TABLE ProjectFields")
+                cursor.execute("TRUNCATE TABLE Project")
+
+                # Enable foreign key checks again
+                cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+
+                self.connection.commit()
+                messagebox.showinfo("Success", "All project data has been cleared")
+
+                # Refresh the project dropdowns
+                self.populate_project_dropdown()
+
+                # Clear any project fields in the tree view
+                for item in self.fields_tree.get_children():
+                    self.fields_tree.delete(item)
+
+            except mysql.connector.Error as err:
+                self.connection.rollback()
+                messagebox.showerror("Database Error", f"Failed to clear project data: {err}")
+    def reset_all_data(self):
+        """Reset the entire database"""
+        if messagebox.askyesno("WARNING",
+                               "This will delete ALL DATA in the database, including posts, users, and social media. This cannot be undone. Are you sure?"):
+            try:
+                cursor = self.connection.cursor()
+
+                # Disable foreign key checks temporarily
+                cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+
+                # Truncate all tables in reverse order of dependencies
+                cursor.execute("TRUNCATE TABLE AnalysisResults")
+                cursor.execute("TRUNCATE TABLE ProjectFields")
+                cursor.execute("TRUNCATE TABLE Project")
+                cursor.execute("TRUNCATE TABLE Post")
+                cursor.execute("TRUNCATE TABLE User")
+                cursor.execute("TRUNCATE TABLE SocialMedia")
+                cursor.execute("TRUNCATE TABLE Institution")
+
+                # Enable foreign key checks again
+                cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+
+                self.connection.commit()
+                messagebox.showinfo("Success", "All data has been cleared from the database")
+
+                # Refresh all dropdowns
+                self.populate_project_dropdown()
+
+            except mysql.connector.Error as err:
+                self.connection.rollback()
+                messagebox.showerror("Database Error", f"Failed to clear database: {err}")
     def query_by_social_media(self):
         sm = self.query_sm.get()
 
@@ -1112,9 +1533,11 @@ class SocialMediaAnalysisApp:
                 p.Time_Posted
             FROM Post p
             JOIN SocialMedia sm ON p.SM_ID = sm.ID
-            JOIN ProjectFields pf ON pf.Field_Name = CONCAT('Post_', p.ID)
+            JOIN AnalysisResults ar ON p.ID = ar.Post_ID
+            JOIN ProjectFields pf ON ar.Field_ID = pf.ID
             JOIN Project pr ON pf.Project_ID = pr.ID
             WHERE pr.Name = %s
+            AND pf.Field_Name = 'PostAssociation'
             ORDER BY p.Time_Posted
         """
 
