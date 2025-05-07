@@ -788,7 +788,7 @@ class SocialMediaAnalysisApp:
                     self.project_field_dropdown['values'] = projects
                 cursor.close()
             except mysql.connector.Error as err:
-                messagebox.showerror("Error", f"Error loading projects: {err}")
+                messagebox.showerror("ERROR", f"The reason it failed is because of: {err}")
     def save_project(self):
         proj_name = self.project_name.get()
         manager_first = self.manager_fname.get()
@@ -798,7 +798,7 @@ class SocialMediaAnalysisApp:
         end = self.end_date.get()
 
         if not all([proj_name, manager_first, manager_last, inst_name, start, end]):
-            messagebox.showerror("Error", "All fields are required")
+            messagebox.showerror("ERROR", "The reason it failed is because not all required fields were filled out")
             return
 
         try:
@@ -836,7 +836,7 @@ class SocialMediaAnalysisApp:
         field_name = self.new_field_name.get()
 
         if not all([proj, field_name]):
-            messagebox.showerror("Error", "Project and field name are required")
+            messagebox.showerror("ERROR","The reason it failed is because either the project or field name was not provided")
             return
 
         try:
@@ -1096,19 +1096,28 @@ class SocialMediaAnalysisApp:
 
             # Check if analysis result already exists
             cursor.execute("""
-                SELECT ID FROM AnalysisResults 
+                SELECT ID, Field_Value FROM AnalysisResults 
                 WHERE Project_ID = %s AND Post_ID = %s AND Field_ID = %s
             """, (project_id, post_id_val, field_id))
 
             result = cursor.fetchone()
 
             if result:
-                # Update existing result
-                cursor.execute("""
-                    UPDATE AnalysisResults 
-                    SET Field_Value = %s 
-                    WHERE ID = %s
-                """, (value, result[0]))
+                # An analysis result already exists for this post/field combination
+                existing_value = result[1]
+                result_id = result[0]
+
+                if existing_value != value:
+                    # If trying to set a different value, show error
+                    messagebox.showerror(
+                        "Duplicate Analysis",
+                        f"This post already has a value '{existing_value}' for field '{field}'. A post cannot have multiple values for the same field in a project."
+                    )
+                    return
+                else:
+                    # Same value - inform user
+                    messagebox.showinfo("Info", "This analysis value already exists.")
+                    return
             else:
                 # Insert new result
                 cursor.execute("""
@@ -1519,46 +1528,34 @@ class SocialMediaAnalysisApp:
             messagebox.showerror("Database Error", f"Error: {err}")
     def get_posts_by_criteria(self):
         project_name = self.combined_project.get().strip()
-
         if not project_name:
             messagebox.showinfo("Notice", "Please select a project first.")
             return []
 
         sql = """
-            SELECT 
+            SELECT DISTINCT 
                 p.ID, 
                 p.Text_Post, 
                 sm.Name AS media, 
                 p.Username, 
                 p.Time_Posted
             FROM Post p
-            JOIN SocialMedia sm ON p.SM_ID = sm.ID
-            JOIN AnalysisResults ar ON p.ID = ar.Post_ID
-            JOIN ProjectFields pf ON ar.Field_ID = pf.ID
-            JOIN Project pr ON pf.Project_ID = pr.ID
+            JOIN SocialMedia sm      ON p.SM_ID   = sm.ID
+            JOIN AnalysisResults ar  ON p.ID       = ar.Post_ID
+            JOIN Project pr          ON ar.Project_ID = pr.ID
             WHERE pr.Name = %s
-            AND pf.Field_Name = 'PostAssociation'
             ORDER BY p.Time_Posted
         """
-
         try:
             cursor = self.connection.cursor()
             cursor.execute(sql, (project_name,))
             posts = cursor.fetchall()
-
-            # Display posts in the results tree
-            for item in self.combined_results_tree.get_children():
-                self.combined_results_tree.delete(item)
-
-            for post in posts:
-                self.combined_results_tree.insert("", "end", values=(
-                    post[0],  # ID
-                    post[1],  # Text_Post
-                    post[2],  # media
-                    post[3],  # Username
-                    post[4]  # Time_Posted
-                ))
-
+            # 把结果填到 Treeview
+            for row in self.combined_results_tree.get_children():
+                self.combined_results_tree.delete(row)
+            for pid, text, media, user, t in posts:
+                self.combined_results_tree.insert("", "end",
+                                                  values=(pid, text, media, user, t))
             return posts
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", f"Failed to fetch posts: {err}")
