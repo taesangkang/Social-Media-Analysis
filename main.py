@@ -38,10 +38,11 @@ class SocialMediaAnalysisApp:
         self.notebook = ttk.Notebook(root)
         self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Create tabs
+        # Create tabs in logical workflow order
         self.create_project_tab()
         self.create_fields_tab()
-        self.create_posts_tab()
+        self.create_posts_management_tab()
+        self.create_association_tab()  # Renamed from create_posts_tab
         self.create_analysis_tab()
         self.create_query_tab()
         self.create_experiment_tab()
@@ -49,7 +50,7 @@ class SocialMediaAnalysisApp:
 
         # Populate dropdowns
         self.populate_project_dropdown()
-    # TABS
+# TABS
     def create_project_tab(self):
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text="Project Information")
@@ -133,125 +134,247 @@ class SocialMediaAnalysisApp:
 
         # Bind project selection to load fields
         self.project_field_dropdown.bind('<<ComboboxSelected>>', self.load_project_fields)
-    def create_posts_tab(self):
+    def create_posts_management_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Associate Posts")
+        self.notebook.add(tab, text="Manage Posts")
 
-        ttk.Label(tab, text="Associate Posts with Projects", font=("Arial", 14)).grid(row=0, column=0, columnspan=4,
-                                                                                      pady=10, padx=10)
+        ttk.Label(tab, text="Create and Manage Posts", font=("Arial", 14)).grid(row=0, column=0, columnspan=4, pady=10,
+                                                                                padx=10)
 
-        ttk.Label(tab, text="Select Project:").grid(row=1, column=0, pady=5, padx=5, sticky="e")
-        self.project_dropdown = ttk.Combobox(tab, width=40)
-        self.project_dropdown.grid(row=1, column=1, pady=5, padx=5, columnspan=3)
-
-        ttk.Separator(tab, orient="horizontal").grid(row=2, column=0, columnspan=4, sticky="ew", pady=10)
-
-        # User Info Frame
+        # User Info Frame - Same as in associate_posts tab
         user_frame = ttk.LabelFrame(tab, text="User Information")
-        user_frame.grid(row=3, column=0, columnspan=2, padx=10, pady=5, sticky="nw")
+        user_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=5, sticky="nw")
 
         ttk.Label(user_frame, text="Social Media:").grid(row=0, column=0, pady=5, padx=5, sticky="e")
-        self.social_media = ttk.Combobox(user_frame, width=25, values=["Facebook", "Twitter", "Instagram"])
-        self.social_media.grid(row=0, column=1, pady=5, padx=5)
+        self.post_social_media = ttk.Combobox(user_frame, width=25, values=["Facebook", "Twitter", "Instagram"])
+        self.post_social_media.grid(row=0, column=1, pady=5, padx=5)
 
         ttk.Label(user_frame, text="Username:").grid(row=1, column=0, pady=5, padx=5, sticky="e")
-        self.username = ttk.Entry(user_frame, width=25)
-        self.username.grid(row=1, column=1, pady=5, padx=5)
+        self.post_username = ttk.Entry(user_frame, width=25)
+        self.post_username.grid(row=1, column=1, pady=5, padx=5)
 
         ttk.Label(user_frame, text="First Name:").grid(row=2, column=0, pady=5, padx=5, sticky="e")
-        self.user_fname = ttk.Entry(user_frame, width=25)
-        self.user_fname.grid(row=2, column=1, pady=5, padx=5)
+        self.post_user_fname = ttk.Entry(user_frame, width=25)
+        self.post_user_fname.grid(row=2, column=1, pady=5, padx=5)
 
         ttk.Label(user_frame, text="Last Name:").grid(row=3, column=0, pady=5, padx=5, sticky="e")
-        self.user_lname = ttk.Entry(user_frame, width=25)
-        self.user_lname.grid(row=3, column=1, pady=5, padx=5)
+        self.post_user_lname = ttk.Entry(user_frame, width=25)
+        self.post_user_lname.grid(row=3, column=1, pady=5, padx=5)
 
         ttk.Label(user_frame, text="Country of Birth:").grid(row=4, column=0, pady=5, padx=5, sticky="e")
-        self.birth_country = ttk.Entry(user_frame, width=25)
-        self.birth_country.grid(row=4, column=1, pady=5, padx=5)
+        self.post_birth_country = ttk.Entry(user_frame, width=25)
+        self.post_birth_country.grid(row=4, column=1, pady=5, padx=5)
 
         ttk.Label(user_frame, text="Country of Residence:").grid(row=5, column=0, pady=5, padx=5, sticky="e")
-        self.residence_country = ttk.Entry(user_frame, width=25)
-        self.residence_country.grid(row=5, column=1, pady=5, padx=5)
+        self.post_residence_country = ttk.Entry(user_frame, width=25)
+        self.post_residence_country.grid(row=5, column=1, pady=5, padx=5)
 
         ttk.Label(user_frame, text="Age:").grid(row=6, column=0, pady=5, padx=5, sticky="e")
-        self.age = ttk.Entry(user_frame, width=25)
-        self.age.grid(row=6, column=1, pady=5, padx=5)
+        self.post_age = ttk.Entry(user_frame, width=25)
+        self.post_age.grid(row=6, column=1, pady=5, padx=5)
 
         ttk.Label(user_frame, text="Gender:").grid(row=7, column=0, pady=5, padx=5, sticky="e")
-        self.gender = ttk.Entry(user_frame, width=25)
-        self.gender.grid(row=7, column=1, pady=5, padx=5)
+        self.post_gender = ttk.Entry(user_frame, width=25)
+        self.post_gender.grid(row=7, column=1, pady=5, padx=5)
 
         ttk.Label(user_frame, text="Verified User:").grid(row=8, column=0, pady=5, padx=5, sticky="e")
-        self.verified_var = tk.BooleanVar()
-        self.verified_check = ttk.Checkbutton(user_frame, variable=self.verified_var)
-        self.verified_check.grid(row=8, column=1, pady=5, padx=5, sticky="w")
+        self.post_verified_var = tk.BooleanVar()
+        self.post_verified_check = ttk.Checkbutton(user_frame, variable=self.post_verified_var)
+        self.post_verified_check.grid(row=8, column=1, pady=5, padx=5, sticky="w")
 
-        # Post Info Frame
+        # Post Info Frame - Same as in associate_posts tab
         post_frame = ttk.LabelFrame(tab, text="Post Information")
-        post_frame.grid(row=3, column=2, columnspan=2, padx=10, pady=5, sticky="nw")
+        post_frame.grid(row=1, column=2, columnspan=2, padx=10, pady=5, sticky="nw")
 
         ttk.Label(post_frame, text="Post Time (YYYY-MM-DD HH:MM):").grid(row=0, column=0, pady=5, padx=5, sticky="e")
-        self.post_time = ttk.Entry(post_frame, width=25)
-        self.post_time.grid(row=0, column=1, pady=5, padx=5)
+        self.post_post_time = ttk.Entry(post_frame, width=25)
+        self.post_post_time.grid(row=0, column=1, pady=5, padx=5)
 
         ttk.Label(post_frame, text="City:").grid(row=1, column=0, pady=5, padx=5, sticky="e")
-        self.city = ttk.Entry(post_frame, width=25)
-        self.city.grid(row=1, column=1, pady=5, padx=5)
+        self.post_city = ttk.Entry(post_frame, width=25)
+        self.post_city.grid(row=1, column=1, pady=5, padx=5)
 
         ttk.Label(post_frame, text="State:").grid(row=2, column=0, pady=5, padx=5, sticky="e")
-        self.state = ttk.Entry(post_frame, width=25)
-        self.state.grid(row=2, column=1, pady=5, padx=5)
+        self.post_state = ttk.Entry(post_frame, width=25)
+        self.post_state.grid(row=2, column=1, pady=5, padx=5)
 
         ttk.Label(post_frame, text="Country:").grid(row=3, column=0, pady=5, padx=5, sticky="e")
-        self.country = ttk.Entry(post_frame, width=25)
-        self.country.grid(row=3, column=1, pady=5, padx=5)
+        self.post_country = ttk.Entry(post_frame, width=25)
+        self.post_country.grid(row=3, column=1, pady=5, padx=5)
 
         ttk.Label(post_frame, text="Likes:").grid(row=4, column=0, pady=5, padx=5, sticky="e")
-        self.likes = ttk.Entry(post_frame, width=25)
-        self.likes.grid(row=4, column=1, pady=5, padx=5)
+        self.post_likes = ttk.Entry(post_frame, width=25)
+        self.post_likes.grid(row=4, column=1, pady=5, padx=5)
 
         ttk.Label(post_frame, text="Dislikes:").grid(row=5, column=0, pady=5, padx=5, sticky="e")
-        self.dislikes = ttk.Entry(post_frame, width=25)
-        self.dislikes.grid(row=5, column=1, pady=5, padx=5)
+        self.post_dislikes = ttk.Entry(post_frame, width=25)
+        self.post_dislikes.grid(row=5, column=1, pady=5, padx=5)
 
         ttk.Label(post_frame, text="Has Multimedia:").grid(row=6, column=0, pady=5, padx=5, sticky="e")
-        self.multimedia_var = tk.BooleanVar()
-        self.multimedia_check = ttk.Checkbutton(post_frame, variable=self.multimedia_var)
-        self.multimedia_check.grid(row=6, column=1, pady=5, padx=5, sticky="w")
+        self.post_multimedia_var = tk.BooleanVar()
+        self.post_multimedia_check = ttk.Checkbutton(post_frame, variable=self.post_multimedia_var)
+        self.post_multimedia_check.grid(row=6, column=1, pady=5, padx=5, sticky="w")
 
-        # Repost Frame
-        repost_frame = ttk.LabelFrame(post_frame, text="Repost Information (Optional)")
-        repost_frame.grid(row=7, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
-
-        ttk.Label(repost_frame, text="Reposted by (Username):").grid(row=0, column=0, pady=5, padx=5, sticky="e")
-        self.repost_username = ttk.Entry(repost_frame, width=25)
-        self.repost_username.grid(row=0, column=1, pady=5, padx=5)
-
-        ttk.Label(repost_frame, text="Repost Time (YYYY-MM-DD HH:MM):").grid(row=1, column=0, pady=5, padx=5,
-                                                                             sticky="e")
-        self.repost_time = ttk.Entry(repost_frame, width=25)
-        self.repost_time.grid(row=1, column=1, pady=5, padx=5)
-
-        # Post Text Frame
+        # Post Text Frame - Same as in associate_posts tab
         post_text_frame = ttk.LabelFrame(tab, text="Post Text Content")
-        post_text_frame.grid(row=4, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
+        post_text_frame.grid(row=2, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
 
-        self.post_text = tk.Text(post_text_frame, width=80, height=8)
-        self.post_text.grid(row=0, column=0, pady=5, padx=5)
+        self.post_post_text = tk.Text(post_text_frame, width=80, height=8)
+        self.post_post_text.grid(row=0, column=0, pady=5, padx=5)
 
-        text_scroll = ttk.Scrollbar(post_text_frame, orient="vertical", command=self.post_text.yview)
+        text_scroll = ttk.Scrollbar(post_text_frame, orient="vertical", command=self.post_post_text.yview)
         text_scroll.grid(row=0, column=1, sticky="ns")
-        self.post_text.configure(yscrollcommand=text_scroll.set)
+        self.post_post_text.configure(yscrollcommand=text_scroll.set)
 
-        # Save button
-        self.save_post_button = ttk.Button(tab, text="Add Post to Project", command=self.save_post)
-        self.save_post_button.grid(row=5, column=0, columnspan=4, pady=20)
+        # Save button - but without project association
+        self.save_post_only_button = ttk.Button(tab, text="Save Post", command=self.save_post_only)
+        self.save_post_only_button.grid(row=3, column=0, columnspan=4, pady=20)
 
-        # List experiments button (7330 requirement)
-        self.list_exp_button = ttk.Button(tab, text="List Experiments for Selected Posts",
-                                          command=self.query_posts_then_experiments)
-        self.list_exp_button.grid(row=6, column=0, columnspan=4, pady=5)
+        # Add a section to view existing posts
+        posts_list_frame = ttk.LabelFrame(tab, text="Existing Posts")
+        posts_list_frame.grid(row=4, column=0, columnspan=4, padx=10, pady=10, sticky="nsew")
+
+        self.posts_tree = ttk.Treeview(posts_list_frame, columns=("ID", "Text", "Media", "User", "Time"),
+                                       show="headings")
+
+        # Set up columns and headings
+        self.posts_tree.heading("ID", text="Post ID")
+        self.posts_tree.heading("Text", text="Post Text")
+        self.posts_tree.heading("Media", text="Social Media")
+        self.posts_tree.heading("User", text="Username")
+        self.posts_tree.heading("Time", text="Time Posted")
+
+        self.posts_tree.column("ID", width=50)
+        self.posts_tree.column("Text", width=300)
+        self.posts_tree.column("Media", width=100)
+        self.posts_tree.column("User", width=100)
+        self.posts_tree.column("Time", width=150)
+
+        # Add scrollbar for posts tree
+        posts_scroll = ttk.Scrollbar(posts_list_frame, orient="vertical", command=self.posts_tree.yview)
+        posts_scroll.pack(side="right", fill="y")
+        self.posts_tree.configure(yscrollcommand=posts_scroll.set)
+        self.posts_tree.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # Refresh button
+        refresh_posts_button = ttk.Button(tab, text="Refresh Posts List", command=self.load_posts)
+        refresh_posts_button.grid(row=5, column=0, columnspan=4, pady=10)
+
+        # Configure row weights to make posts list expandable
+        tab.grid_rowconfigure(4, weight=1)
+    def create_association_tab(self):
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text="Associate Posts to Projects")
+
+        ttk.Label(tab, text="Associate Existing Posts with Projects", font=("Arial", 14)).grid(row=0, column=0,
+                                                                                               columnspan=4, pady=10,
+                                                                                               padx=10)
+
+        # Project selection
+        project_frame = ttk.LabelFrame(tab, text="Select Project")
+        project_frame.grid(row=1, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
+
+        ttk.Label(project_frame, text="Project:").grid(row=0, column=0, pady=5, padx=5, sticky="e")
+        self.project_dropdown = ttk.Combobox(project_frame, width=40)
+        self.project_dropdown.grid(row=0, column=1, pady=5, padx=5)
+
+        # When project is selected, show already associated posts
+        self.project_dropdown.bind('<<ComboboxSelected>>', self.load_associated_posts)
+
+        # Post selection section
+        post_filter_frame = ttk.LabelFrame(tab, text="Find Posts to Associate")
+        post_filter_frame.grid(row=2, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
+
+        # Search filters
+        ttk.Label(post_filter_frame, text="Filter by Username:").grid(row=0, column=0, pady=5, padx=5)
+        self.filter_username = ttk.Entry(post_filter_frame, width=20)
+        self.filter_username.grid(row=0, column=1, pady=5, padx=5)
+
+        ttk.Label(post_filter_frame, text="Filter by Social Media:").grid(row=0, column=2, pady=5, padx=5)
+        self.filter_social_media = ttk.Combobox(post_filter_frame, width=15,
+                                                values=["Facebook", "Twitter", "Instagram"])
+        self.filter_social_media.grid(row=0, column=3, pady=5, padx=5)
+
+        ttk.Label(post_filter_frame, text="Contains Text:").grid(row=1, column=0, pady=5, padx=5)
+        self.filter_text = ttk.Entry(post_filter_frame, width=20)
+        self.filter_text.grid(row=1, column=1, pady=5, padx=5)
+
+        ttk.Label(post_filter_frame, text="Date Range:").grid(row=1, column=2, pady=5, padx=5)
+        date_range_frame = ttk.Frame(post_filter_frame)
+        date_range_frame.grid(row=1, column=3, pady=5, padx=5)
+
+        self.filter_start_date = ttk.Entry(date_range_frame, width=10)
+        self.filter_start_date.grid(row=0, column=0, padx=2)
+        ttk.Label(date_range_frame, text="to").grid(row=0, column=1, padx=2)
+        self.filter_end_date = ttk.Entry(date_range_frame, width=10)
+        self.filter_end_date.grid(row=0, column=2, padx=2)
+
+        filter_button = ttk.Button(post_filter_frame, text="Filter Posts", command=self.filter_posts_for_association)
+        filter_button.grid(row=2, column=0, columnspan=4, pady=10)
+
+        # Display available posts
+        available_posts_frame = ttk.LabelFrame(tab, text="Available Posts")
+        available_posts_frame.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+        self.available_posts_tree = ttk.Treeview(available_posts_frame,
+                                                 columns=("ID", "Text", "Media", "User", "Time"),
+                                                 show="headings",
+                                                 selectmode="extended")
+
+        self.available_posts_tree.heading("ID", text="Post ID")
+        self.available_posts_tree.heading("Text", text="Post Text")
+        self.available_posts_tree.heading("Media", text="Social Media")
+        self.available_posts_tree.heading("User", text="Username")
+        self.available_posts_tree.heading("Time", text="Time Posted")
+
+        self.available_posts_tree.column("ID", width=50)
+        self.available_posts_tree.column("Text", width=200)
+        self.available_posts_tree.column("Media", width=80)
+        self.available_posts_tree.column("User", width=80)
+        self.available_posts_tree.column("Time", width=120)
+
+        self.available_posts_tree.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # Display already associated posts
+        associated_posts_frame = ttk.LabelFrame(tab, text="Posts Already Associated with Project")
+        associated_posts_frame.grid(row=3, column=2, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+        self.associated_posts_tree = ttk.Treeview(associated_posts_frame,
+                                                  columns=("ID", "Text", "Media", "User", "Time"),
+                                                  show="headings")
+
+        self.associated_posts_tree.heading("ID", text="Post ID")
+        self.associated_posts_tree.heading("Text", text="Post Text")
+        self.associated_posts_tree.heading("Media", text="Social Media")
+        self.associated_posts_tree.heading("User", text="Username")
+        self.associated_posts_tree.heading("Time", text="Time Posted")
+
+        self.associated_posts_tree.column("ID", width=50)
+        self.associated_posts_tree.column("Text", width=200)
+        self.associated_posts_tree.column("Media", width=80)
+        self.associated_posts_tree.column("User", width=80)
+        self.associated_posts_tree.column("Time", width=120)
+
+        self.associated_posts_tree.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # Buttons for association
+        button_frame = ttk.Frame(tab)
+        button_frame.grid(row=4, column=0, columnspan=4, pady=10, padx=10)
+
+        associate_button = ttk.Button(button_frame, text="Associate Selected Posts with Project →",
+                                      command=self.associate_selected_posts)
+        associate_button.grid(row=0, column=0, padx=10)
+
+        remove_button = ttk.Button(button_frame, text="← Remove Posts from Project",
+                                   command=self.remove_posts_from_project)
+        remove_button.grid(row=0, column=1, padx=10)
+
+        # Configure row weights to make post trees expandable
+        tab.grid_rowconfigure(3, weight=1)
+        tab.grid_columnconfigure(0, weight=1)
+        tab.grid_columnconfigure(1, weight=1)
+        tab.grid_columnconfigure(2, weight=1)
+        tab.grid_columnconfigure(3, weight=1)
     def create_analysis_tab(self):
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text="Analysis Results")
@@ -454,7 +577,558 @@ class SocialMediaAnalysisApp:
 
         # Configure to make results area expandable
         tab.grid_rowconfigure(3, weight=1)
-    # FUNCTIONS
+# FUNCTIONS
+    def filter_posts_for_association(self):
+        """Find posts based on filter criteria"""
+        if not self.project_dropdown.get():
+            messagebox.showinfo("Notice", "Please select a project first")
+            return
+
+        try:
+            cursor = self.connection.cursor()
+
+            # Start with base query
+            query = """
+                SELECT 
+                    p.ID as Post_ID,
+                    p.Text_Post,
+                    sm.Name as Social_Media,
+                    p.Username,
+                    p.Time_Posted
+                FROM Post p
+                JOIN SocialMedia sm ON p.SM_ID = sm.ID
+                WHERE 1=1
+            """
+            params = []
+
+            # Add filters based on what's filled in
+            if self.filter_username.get():
+                query += " AND p.Username LIKE %s"
+                params.append(f"%{self.filter_username.get()}%")
+
+            if self.filter_social_media.get():
+                query += " AND sm.Name = %s"
+                params.append(self.filter_social_media.get())
+
+            if self.filter_text.get():
+                query += " AND p.Text_Post LIKE %s"
+                params.append(f"%{self.filter_text.get()}%")
+
+            if self.filter_start_date.get() and self.filter_end_date.get():
+                query += " AND p.Time_Posted BETWEEN %s AND %s"
+                params.append(self.filter_start_date.get())
+                params.append(self.filter_end_date.get())
+
+            # Exclude posts already associated with this project
+            project_id = self.get_project_id(self.project_dropdown.get())
+            if project_id:
+                query += """
+                    AND p.ID NOT IN (
+                        SELECT Post_ID FROM AnalysisResults 
+                        WHERE Project_ID = %s AND Field_ID IN (
+                            SELECT ID FROM ProjectFields 
+                            WHERE Project_ID = %s AND Field_Name = 'PostAssociation'
+                        )
+                    )
+                """
+                params.append(project_id)
+                params.append(project_id)
+
+            query += " ORDER BY p.Time_Posted DESC"
+
+            cursor.execute(query, params)
+            results = cursor.fetchall()
+
+            # Clear existing items
+            for item in self.available_posts_tree.get_children():
+                self.available_posts_tree.delete(item)
+
+            # Populate tree with filtered posts
+            for row in results:
+                post_id = row[0]
+                text = row[1]
+                # Truncate text if too long for display
+                if len(text) > 30:
+                    text = text[:27] + "..."
+
+                self.available_posts_tree.insert("", "end", values=(
+                    post_id,
+                    text,
+                    row[2],  # Social_Media
+                    row[3],  # Username
+                    row[4]  # Time_Posted
+                ))
+
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", f"Error filtering posts: {err}")
+    def load_associated_posts(self, event=None):
+        """Load posts already associated with the selected project"""
+        project = self.project_dropdown.get()
+
+        if not project:
+            return
+
+        try:
+            cursor = self.connection.cursor()
+
+            # Get project ID
+            project_id = self.get_project_id(project)
+
+            if not project_id:
+                return
+
+            # Find field ID for PostAssociation
+            cursor.execute("""
+                SELECT ID FROM ProjectFields 
+                WHERE Project_ID = %s AND Field_Name = 'PostAssociation'
+            """, (project_id,))
+
+            field_result = cursor.fetchone()
+            if not field_result:
+                # No posts associated yet
+                for item in self.associated_posts_tree.get_children():
+                    self.associated_posts_tree.delete(item)
+                return
+
+            field_id = field_result[0]
+
+            # Get associated posts
+            query = """
+                SELECT 
+                    p.ID as Post_ID,
+                    p.Text_Post,
+                    sm.Name as Social_Media,
+                    p.Username,
+                    p.Time_Posted
+                FROM Post p
+                JOIN SocialMedia sm ON p.SM_ID = sm.ID
+                JOIN AnalysisResults ar ON p.ID = ar.Post_ID
+                WHERE ar.Project_ID = %s AND ar.Field_ID = %s
+                ORDER BY p.Time_Posted DESC
+            """
+
+            cursor.execute(query, (project_id, field_id))
+            results = cursor.fetchall()
+
+            # Clear existing items
+            for item in self.associated_posts_tree.get_children():
+                self.associated_posts_tree.delete(item)
+
+            # Populate tree with associated posts
+            for row in results:
+                post_id = row[0]
+                text = row[1]
+                # Truncate text if too long for display
+                if len(text) > 30:
+                    text = text[:27] + "..."
+
+                self.associated_posts_tree.insert("", "end", values=(
+                    post_id,
+                    text,
+                    row[2],  # Social_Media
+                    row[3],  # Username
+                    row[4]  # Time_Posted
+                ))
+
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", f"Error loading associated posts: {err}")
+    def get_project_id(self, project_name):
+        """Helper to get project ID from name"""
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute("SELECT ID FROM Project WHERE Name = %s", (project_name,))
+            result = cursor.fetchone()
+            if result:
+                return result[0]
+            return None
+        except mysql.connector.Error:
+            return None
+    def associate_selected_posts(self):
+        """Associate selected posts with the current project"""
+        project = self.project_dropdown.get()
+
+        if not project:
+            messagebox.showerror("Error", "Please select a project")
+            return
+
+        # Get selected posts
+        selected_items = self.available_posts_tree.selection()
+
+        if not selected_items:
+            messagebox.showinfo("Notice", "Please select at least one post to associate")
+            return
+
+        post_ids = [self.available_posts_tree.item(item, "values")[0] for item in selected_items]
+
+        try:
+            cursor = self.connection.cursor()
+
+            # Get project ID
+            project_id = self.get_project_id(project)
+
+            if not project_id:
+                messagebox.showerror("Error", "Project not found")
+                return
+
+            # Get or create the PostAssociation field
+            cursor.execute("""
+                SELECT ID FROM ProjectFields 
+                WHERE Project_ID = %s AND Field_Name = 'PostAssociation'
+            """, (project_id,))
+
+            field_result = cursor.fetchone()
+            if not field_result:
+                cursor.execute("""
+                    INSERT INTO ProjectFields (Project_ID, Field_Name)
+                    VALUES (%s, 'PostAssociation')
+                """, (project_id,))
+                self.connection.commit()
+
+                cursor.execute("""
+                    SELECT ID FROM ProjectFields 
+                    WHERE Project_ID = %s AND Field_Name = 'PostAssociation'
+                """, (project_id,))
+                field_result = cursor.fetchone()
+
+            field_id = field_result[0]
+
+            # Associate each post
+            associated_count = 0
+
+            for post_id in post_ids:
+                # Create new association
+                cursor.execute("""
+                    INSERT INTO AnalysisResults (Project_ID, Post_ID, Field_ID, Field_Value)
+                    VALUES (%s, %s, %s, 'Associated')
+                """, (project_id, post_id, field_id))
+
+                associated_count += 1
+
+            self.connection.commit()
+
+            messagebox.showinfo("Success", f"Successfully associated {associated_count} posts with the project")
+
+            # Refresh both trees
+            self.load_associated_posts()
+            self.filter_posts_for_association()
+
+        except mysql.connector.Error as err:
+            self.connection.rollback()
+            messagebox.showerror("Database Error", f"Error associating posts: {err}")
+    def remove_posts_from_project(self):
+        """Remove selected posts from the current project"""
+        project = self.project_dropdown.get()
+
+        if not project:
+            messagebox.showerror("Error", "Please select a project")
+            return
+
+        # Get selected posts
+        selected_items = self.associated_posts_tree.selection()
+
+        if not selected_items:
+            messagebox.showinfo("Notice", "Please select at least one post to remove")
+            return
+
+        post_ids = [self.associated_posts_tree.item(item, "values")[0] for item in selected_items]
+
+        if not messagebox.askyesno("Confirm",
+                                   f"Are you sure you want to remove {len(post_ids)} posts from this project?"):
+            return
+
+        try:
+            cursor = self.connection.cursor()
+
+            # Get project ID
+            project_id = self.get_project_id(project)
+
+            if not project_id:
+                messagebox.showerror("Error", "Project not found")
+                return
+
+            # Get the PostAssociation field ID
+            cursor.execute("""
+                SELECT ID FROM ProjectFields 
+                WHERE Project_ID = %s AND Field_Name = 'PostAssociation'
+            """, (project_id,))
+
+            field_result = cursor.fetchone()
+            if not field_result:
+                messagebox.showerror("Error", "Association field not found")
+                return
+
+            field_id = field_result[0]
+
+            # Create a placeholder for the query
+            placeholders = ', '.join(['%s'] * len(post_ids))
+
+            # Delete the associations
+            query = f"""
+                DELETE FROM AnalysisResults
+                WHERE Project_ID = %s AND Field_ID = %s AND Post_ID IN ({placeholders})
+            """
+
+            # Parameters for the query - project_id and field_id, followed by all post_ids
+            params = [project_id, field_id] + post_ids
+
+            cursor.execute(query, params)
+            rows_affected = cursor.rowcount
+
+            self.connection.commit()
+
+            messagebox.showinfo("Success", f"Removed {rows_affected} posts from the project")
+
+            # Refresh both trees
+            self.load_associated_posts()
+            self.filter_posts_for_association()
+
+        except mysql.connector.Error as err:
+            self.connection.rollback()
+            messagebox.showerror("Database Error", f"Error removing posts: {err}")
+    def save_post_only(self):
+        """Save a post without associating it with any project"""
+        sm = self.post_social_media.get()
+        user = self.post_username.get()
+        text = self.post_post_text.get("1.0", tk.END).strip()
+        p_time = self.post_post_time.get()
+
+        if not all([sm, user, text, p_time]):
+            messagebox.showerror("Error", "Social Media, Username, Text, and Time are required")
+            return
+
+        try:
+            cursor = self.connection.cursor()
+
+            # Handle Social Media
+            cursor.execute("SELECT ID FROM SocialMedia WHERE Name = %s", (sm,))
+            sm_result = cursor.fetchone()
+
+            if not sm_result:
+                cursor.execute("INSERT INTO SocialMedia (Name) VALUES (%s)", (sm,))
+                self.connection.commit()
+                cursor.execute("SELECT ID FROM SocialMedia WHERE Name = %s", (sm,))
+                sm_result = cursor.fetchone()
+
+            sm_id = sm_result[0]
+
+            # Get user details from form
+            first_name = self.post_user_fname.get() or None
+            last_name = self.post_user_lname.get() or None
+            birth_country = self.post_birth_country.get() or None
+            residence_country = self.post_residence_country.get() or None
+            age = self.post_age.get() or None
+            gender = self.post_gender.get() or None
+            is_verified = self.post_verified_var.get()
+
+            # Handle User - Check if user exists with ANY different details
+            cursor.execute("SELECT * FROM User WHERE SM_ID = %s AND Username = %s", (sm_id, user))
+            user_result = cursor.fetchone()
+
+            if user_result:
+                # User exists - verify ALL details match to ensure consistency
+                inconsistencies = []
+
+                # Check each field that has been provided (not empty) for consistency
+                if first_name and user_result['First_Name'] != first_name:
+                    inconsistencies.append(f"First Name: '{user_result['First_Name']}' vs '{first_name}'")
+
+                if last_name and user_result['Last_Name'] != last_name:
+                    inconsistencies.append(f"Last Name: '{user_result['Last_Name']}' vs '{last_name}'")
+
+                if birth_country and user_result['Country_of_Birth'] != birth_country:
+                    inconsistencies.append(
+                        f"Country of Birth: '{user_result['Country_of_Birth']}' vs '{birth_country}'")
+
+                if residence_country and user_result['Country_of_Residence'] != residence_country:
+                    inconsistencies.append(
+                        f"Country of Residence: '{user_result['Country_of_Residence']}' vs '{residence_country}'")
+
+                if age and str(user_result['Age']) != age:
+                    inconsistencies.append(f"Age: '{user_result['Age']}' vs '{age}'")
+
+                if gender and user_result['Gender'] != gender:
+                    inconsistencies.append(f"Gender: '{user_result['Gender']}' vs '{gender}'")
+
+                if user_result['Is_Verified'] != is_verified:
+                    inconsistencies.append(
+                        f"Verified Status: '{'Yes' if user_result['Is_Verified'] else 'No'}' vs '{'Yes' if is_verified else 'No'}'")
+
+                # If any inconsistencies were found, show detailed error
+                if inconsistencies:
+                    error_message = f"User '{user}' on {sm} already exists with different details:\n\n"
+                    error_message += "\n".join(inconsistencies)
+                    error_message += "\n\nTo maintain user data consistency, please use the existing user details or create a new username."
+
+                    # Create a dialog to show the detailed error
+                    error_dialog = tk.Toplevel(self.root)
+                    error_dialog.title("User Data Consistency Error")
+                    error_dialog.geometry("500x300")
+
+                    tk.Label(error_dialog, text=error_message, justify="left", wraplength=480).pack(padx=20, pady=20)
+
+                    # Option to pre-fill fields with existing user data
+                    fill_button = ttk.Button(error_dialog, text="Use Existing User Data",
+                                             command=lambda: self.fill_user_data(error_dialog, user_result))
+                    fill_button.pack(pady=10)
+
+                    ttk.Button(error_dialog, text="Close", command=error_dialog.destroy).pack(pady=10)
+
+                    # Keep dialog on top
+                    error_dialog.transient(self.root)
+                    error_dialog.grab_set()
+                    self.root.wait_window(error_dialog)
+
+                    return
+            else:
+                # Create new user
+                cursor.execute("""
+                    INSERT INTO User (SM_ID, Username, First_Name, Last_Name, 
+                                   Country_of_Birth, Country_of_Residence, Age, Gender, Is_Verified)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    sm_id, user, first_name, last_name, birth_country,
+                    residence_country, age, gender, is_verified
+                ))
+                self.connection.commit()
+
+            # Check for duplicate posts (same user, same time, same platform)
+            cursor.execute("""
+                SELECT ID FROM Post 
+                WHERE SM_ID = %s AND Username = %s AND Time_Posted = %s
+            """, (sm_id, user, p_time))
+
+            post_result = cursor.fetchone()
+
+            if post_result:
+                messagebox.showerror(
+                    "Duplicate Post",
+                    "This user already has a post at this exact time on this platform."
+                )
+                return
+            else:
+                # Create new post
+                cursor.execute("""
+                    INSERT INTO Post (
+                        SM_ID, Username, Text_Post, Time_Posted,
+                        City_of_Post, State_of_Post, Country_of_Post,
+                        Likes, Dislikes, Has_Multimedia
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    sm_id, user, text, p_time,
+                    self.post_city.get() or None,
+                    self.post_state.get() or None,
+                    self.post_country.get() or None,
+                    self.post_likes.get() or 0,
+                    self.post_dislikes.get() or 0,
+                    self.post_multimedia_var.get()
+                ))
+
+                self.connection.commit()
+
+                # Get the ID of the newly created post
+                cursor.execute("SELECT LAST_INSERT_ID()")
+                post_id = cursor.fetchone()[0]
+
+                messagebox.showinfo("Success", f"Post saved with ID {post_id}")
+
+                # Clear form fields
+                self.clear_post_form()
+
+                # Refresh posts list
+                self.load_posts()
+
+        except mysql.connector.Error as err:
+            self.connection.rollback()
+            messagebox.showerror("Database Error", f"Error: {err}")
+    def fill_user_data(self, dialog, user_data):
+        """Fill the form with existing user data"""
+        # Set the form fields to match the existing user data
+        self.post_user_fname.delete(0, tk.END)
+        self.post_user_fname.insert(0, user_data['First_Name'] or "")
+
+        self.post_user_lname.delete(0, tk.END)
+        self.post_user_lname.insert(0, user_data['Last_Name'] or "")
+
+        self.post_birth_country.delete(0, tk.END)
+        self.post_birth_country.insert(0, user_data['Country_of_Birth'] or "")
+
+        self.post_residence_country.delete(0, tk.END)
+        self.post_residence_country.insert(0, user_data['Country_of_Residence'] or "")
+
+        self.post_age.delete(0, tk.END)
+        self.post_age.insert(0, str(user_data['Age']) if user_data['Age'] else "")
+
+        self.post_gender.delete(0, tk.END)
+        self.post_gender.insert(0, user_data['Gender'] or "")
+
+        self.post_verified_var.set(user_data['Is_Verified'])
+
+        # Close the dialog
+        dialog.destroy()
+    def clear_post_form(self):
+        """Clear all fields in the post creation form"""
+        self.post_username.delete(0, tk.END)
+        self.post_user_fname.delete(0, tk.END)
+        self.post_user_lname.delete(0, tk.END)
+        self.post_birth_country.delete(0, tk.END)
+        self.post_residence_country.delete(0, tk.END)
+        self.post_age.delete(0, tk.END)
+        self.post_gender.delete(0, tk.END)
+        self.post_verified_var.set(False)
+
+        self.post_post_time.delete(0, tk.END)
+        self.post_city.delete(0, tk.END)
+        self.post_state.delete(0, tk.END)
+        self.post_country.delete(0, tk.END)
+        self.post_likes.delete(0, tk.END)
+        self.post_dislikes.delete(0, tk.END)
+        self.post_multimedia_var.set(False)
+
+        self.post_post_text.delete("1.0", tk.END)
+    def load_posts(self):
+        """Load all posts into the posts tree view"""
+        try:
+            cursor = self.connection.cursor()
+
+            query = """
+                SELECT 
+                    p.ID as Post_ID,
+                    p.Text_Post,
+                    sm.Name as Social_Media,
+                    p.Username,
+                    p.Time_Posted
+                FROM Post p
+                JOIN SocialMedia sm ON p.SM_ID = sm.ID
+                ORDER BY p.Time_Posted DESC
+            """
+
+            cursor.execute(query)
+            results = cursor.fetchall()
+
+            # Clear existing items
+            for item in self.posts_tree.get_children():
+                self.posts_tree.delete(item)
+
+            # Add all posts
+            for row in results:
+                post_id = row[0]
+                text = row[1]
+                # Truncate text if too long for display
+                if len(text) > 50:
+                    text = text[:47] + "..."
+
+                self.posts_tree.insert("", "end", values=(
+                    post_id,
+                    text,
+                    row[2],  # Social_Media
+                    row[3],  # Username
+                    row[4]  # Time_Posted
+                ))
+
+            cursor.close()
+
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", f"Error loading posts: {err}")
     def populate_sample_data(self):
         """Populate the database with a complete sample dataset"""
         try:
@@ -901,145 +1575,6 @@ class SocialMediaAnalysisApp:
             cursor.close()
         except mysql.connector.Error as err:
             messagebox.showerror("Error", f"Error loading fields: {err}")
-    def save_post(self):
-        proj = self.project_dropdown.get()
-        sm = self.social_media.get()
-        user = self.username.get()
-        text = self.post_text.get("1.0", tk.END).strip()
-        p_time = self.post_time.get()
-
-        if not all([proj, sm, user, text, p_time]):
-            messagebox.showerror("Error", "Project, Social Media, Username, Text, and Time are required")
-            return
-
-        try:
-            cursor = self.connection.cursor()
-
-            # Handle Social Media
-            cursor.execute("SELECT ID FROM SocialMedia WHERE Name = %s", (sm,))
-            sm_result = cursor.fetchone()
-
-            if not sm_result:
-                cursor.execute("INSERT INTO SocialMedia (Name) VALUES (%s)", (sm,))
-                self.connection.commit()
-                cursor.execute("SELECT ID FROM SocialMedia WHERE Name = %s", (sm,))
-                sm_result = cursor.fetchone()
-
-            sm_id = sm_result[0]
-
-            # Handle User
-            cursor.execute("SELECT ID FROM User WHERE SM_ID = %s AND Username = %s", (sm_id, user))
-            user_result = cursor.fetchone()
-
-            if not user_result:
-                cursor.execute("""
-                    INSERT INTO User (SM_ID, Username, First_Name, Last_Name, 
-                                   Country_of_Birth, Country_of_Residence, Age, Gender, Is_Verified)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    sm_id, user,
-                    self.user_fname.get() or None,
-                    self.user_lname.get() or None,
-                    self.birth_country.get() or None,
-                    self.residence_country.get() or None,
-                    self.age.get() or None,
-                    self.gender.get() or None,
-                    self.verified_var.get()
-                ))
-                self.connection.commit()
-
-            # Check if post already exists
-            cursor.execute("""
-                SELECT ID FROM Post 
-                WHERE SM_ID = %s AND Username = %s AND Time_Posted = %s
-            """, (sm_id, user, p_time))
-
-            post_result = cursor.fetchone()
-
-            if post_result:
-                post_id = post_result[0]
-                messagebox.showinfo("Info", "Post already exists - associating with project")
-            else:
-                # Create new post
-                cursor.execute("""
-                    INSERT INTO Post (
-                        SM_ID, Username, Text_Post, Time_Posted,
-                        City_of_Post, State_of_Post, Country_of_Post,
-                        Likes, Dislikes, Has_Multimedia
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    sm_id, user, text, p_time,
-                    self.city.get() or None,
-                    self.state.get() or None,
-                    self.country.get() or None,
-                    self.likes.get() or 0,
-                    self.dislikes.get() or 0,
-                    self.multimedia_var.get()
-                ))
-
-                self.connection.commit()
-                cursor.execute("SELECT LAST_INSERT_ID()")
-                post_id = cursor.fetchone()[0]
-
-            # Associate post with project (without creating a field)
-            cursor.execute("SELECT ID FROM Project WHERE Name = %s", (proj,))
-            project_id = cursor.fetchone()[0]
-
-            # Instead of creating a field, we'll create a direct association
-            # For this, we need a new table PostProjects or modify how we use AnalysisResults
-            # Here, we'll directly insert into AnalysisResults with a special field ID
-
-            # Get or create a system field for tracking posts
-            cursor.execute("""
-                SELECT ID FROM ProjectFields 
-                WHERE Project_ID = %s AND Field_Name = 'PostAssociation'
-            """, (project_id,))
-
-            field_result = cursor.fetchone()
-            if not field_result:
-                cursor.execute("""
-                    INSERT INTO ProjectFields (Project_ID, Field_Name)
-                    VALUES (%s, 'PostAssociation')
-                """, (project_id,))
-                self.connection.commit()
-
-                cursor.execute("""
-                    SELECT ID FROM ProjectFields 
-                    WHERE Project_ID = %s AND Field_Name = 'PostAssociation'
-                """, (project_id,))
-                field_result = cursor.fetchone()
-
-            field_id = field_result[0]
-
-            # Associate post with project
-            cursor.execute("""
-                SELECT ID FROM AnalysisResults
-                WHERE Project_ID = %s AND Post_ID = %s AND Field_ID = %s
-            """, (project_id, post_id, field_id))
-
-            if not cursor.fetchone():
-                cursor.execute("""
-                    INSERT INTO AnalysisResults (Project_ID, Post_ID, Field_ID, Field_Value)
-                    VALUES (%s, %s, %s, 'Associated')
-                """, (project_id, post_id, field_id))
-
-            self.connection.commit()
-            messagebox.showinfo("Success", "Post associated with project")
-
-            # Clear form fields
-            self.username.delete(0, tk.END)
-            self.post_text.delete("1.0", tk.END)
-            self.post_time.delete(0, tk.END)
-            self.city.delete(0, tk.END)
-            self.state.delete(0, tk.END)
-            self.country.delete(0, tk.END)
-            self.likes.delete(0, tk.END)
-            self.dislikes.delete(0, tk.END)
-            self.multimedia_var.set(False)
-
-        except mysql.connector.Error as err:
-            self.connection.rollback()
-            messagebox.showerror("Database Error", f"Error: {err}")
     def populate_fields_dropdown(self, event=None):
         if self.connection:
             proj = self.analysis_project.get()
@@ -1194,6 +1729,7 @@ class SocialMediaAnalysisApp:
             except mysql.connector.Error as err:
                 self.connection.rollback()
                 messagebox.showerror("Database Error", f"Failed to clear database: {err}")
+# QUERY FUNCTIONS
     def query_by_social_media(self):
         sm = self.query_sm.get()
 
@@ -1526,37 +2062,76 @@ class SocialMediaAnalysisApp:
 
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", f"Error: {err}")
-    def get_posts_by_criteria(self):
-        project_name = self.combined_project.get().strip()
-        if not project_name:
+    def get_posts_by_criteria(self, include_unassociated=False, project_name=None):
+        """Get posts based on criteria - can include unassociated posts"""
+        # If project name not provided, try to get it from the combined_project field
+        if project_name is None:
+            project_name = self.combined_project.get().strip()
+
+        # If still no project name and we need one, show error
+        if not project_name and not include_unassociated:
             messagebox.showinfo("Notice", "Please select a project first.")
             return []
 
-        sql = """
-            SELECT DISTINCT 
-                p.ID, 
-                p.Text_Post, 
-                sm.Name AS media, 
-                p.Username, 
-                p.Time_Posted
-            FROM Post p
-            JOIN SocialMedia sm      ON p.SM_ID   = sm.ID
-            JOIN AnalysisResults ar  ON p.ID       = ar.Post_ID
-            JOIN Project pr          ON ar.Project_ID = pr.ID
-            WHERE pr.Name = %s
-            ORDER BY p.Time_Posted
-        """
         try:
             cursor = self.connection.cursor()
-            cursor.execute(sql, (project_name,))
+
+            # Different query depending on whether we want to include unassociated posts
+            if include_unassociated:
+                # Query that gets all posts (associated or not)
+                sql = """
+                    SELECT 
+                        p.ID, 
+                        p.Text_Post, 
+                        sm.Name AS media, 
+                        p.Username, 
+                        p.Time_Posted
+                    FROM Post p
+                    JOIN SocialMedia sm ON p.SM_ID = sm.ID
+                """
+                # Add project filter if provided
+                if project_name:
+                    sql += """
+                        LEFT JOIN AnalysisResults ar ON p.ID = ar.Post_ID
+                        LEFT JOIN Project pr ON ar.Project_ID = pr.ID
+                        WHERE pr.Name = %s OR pr.Name IS NULL
+                    """
+                    cursor.execute(sql, (project_name,))
+                else:
+                    cursor.execute(sql)
+            else:
+                # Original query that only gets posts associated with a project
+                sql = """
+                    SELECT DISTINCT 
+                        p.ID, 
+                        p.Text_Post, 
+                        sm.Name AS media, 
+                        p.Username, 
+                        p.Time_Posted
+                    FROM Post p
+                    JOIN SocialMedia sm ON p.SM_ID = sm.ID
+                    JOIN AnalysisResults ar ON p.ID = ar.Post_ID
+                    JOIN Project pr ON ar.Project_ID = pr.ID
+                    WHERE pr.Name = %s
+                    ORDER BY p.Time_Posted
+                """
+                cursor.execute(sql, (project_name,))
+
             posts = cursor.fetchall()
-            # 把结果填到 Treeview
-            for row in self.combined_results_tree.get_children():
-                self.combined_results_tree.delete(row)
-            for pid, text, media, user, t in posts:
-                self.combined_results_tree.insert("", "end",
-                                                  values=(pid, text, media, user, t))
+
+            # For display in the combined results tree (if used)
+            if hasattr(self, 'combined_results_tree'):
+                # Clear existing items
+                for row in self.combined_results_tree.get_children():
+                    self.combined_results_tree.delete(row)
+
+                # Add new items
+                for pid, text, media, user, t in posts:
+                    self.combined_results_tree.insert("", "end",
+                                                      values=(pid, text, media, user, t))
+
             return posts
+
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", f"Failed to fetch posts: {err}")
             return []
