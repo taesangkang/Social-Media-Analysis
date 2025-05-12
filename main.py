@@ -1,4 +1,3 @@
-# Import packages
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
@@ -19,7 +18,6 @@ def connect_db():
         messagebox.showerror("Database Error", f"Failed to connect: {err}")
         return None
 
-# Create the main window
 class SocialMediaAnalysisApp:
     def __init__(self, root):
         self.root = root
